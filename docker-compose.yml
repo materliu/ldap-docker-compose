@@ -1,0 +1,83 @@
+version: '2'
+services: 
+  db:
+    image: mysql:latest
+    volumes:
+      - "./.data/db:/var/lib/mysql"
+      - "./conf/mysql:/etc/mysql/conf.d"
+    restart: always    
+    environment:
+      MYSQL_ROOT_PASSWORD: ldap
+      MYSQL_DATABASE: ldap
+      MYSQL_USER: dingfu
+      MYSQL_PASSWORD: ldap
+
+  ldap-client:
+    image: osixia/phpldapadmin:latest
+    hostname: dingfudata
+    domainname: ldap.dingfudata.com
+    depends_on:
+      - db
+      - ldap
+    links:
+      - db
+      - ldap:ldap.dingfudata.com
+    ports: 
+      - 6443:443  
+    restart: always
+    environment:
+      LDAP_DB_HOST: db:3306
+      LDAP_DB_PASSWORD: ldap
+      LDAP_DB_USER: dingfu
+      LDAP_DB_NAME: ldap
+      PHPLDAPADMIN_LDAP_HOSTS: ldap.dingfudata.com   
+      PHPLDAPADMIN_LDAP_CLIENT_TLS: "false"
+
+  ldap:
+    depends_on:
+      - db
+    image: osixia/openldap:latest    
+    hostname: dingfudata
+    domainname: ldap.dingfudata.com
+    ports:
+      - "389:389"
+    volumes:
+      - "./.data/var/lib/ldap:/var/lib/ldap"
+      - "./.data/etc/ldap/slapd.d:/etc/ldap/slapd.d"
+    links:
+      - db
+    restart: always    
+    environment: 
+      LDAP_DB_HOST: db:3306
+      LDAP_DB_PASSWORD: ldap
+      LDAP_DB_USER: dingfu
+      LDAP_DB_NAME: ldap 
+      LDAP_ORGANISATION: DingFu
+      LDAP_DOMAIN: ldap.dingfudata.com
+      LDAP_ADMIN_PASSWORD: XXXXXXXX
+      LDAP_TLS: "false"
+
+  ldapbackup:
+    depends_on:
+      - db
+      - ldap  
+    image: osixia/openldap-backup:latest  
+    hostname: dingfudata
+    domainname: ldap.dingfudata.com
+    volumes:
+      - "./.data/openldap/backup:/data/backup"
+    links:
+      - db
+      - ldap:ldap.dingfudata.com
+    restart: always    
+    environment: 
+      LDAP_DB_HOST: db:3306
+      LDAP_DB_PASSWORD: ldap
+      LDAP_DB_USER: dingfu
+      LDAP_DB_NAME: ldap 
+      LDAP_ORGANISATION: DingFu
+      LDAP_DOMAIN: ldap.dingfudata.com
+      LDAP_ADMIN_PASSWORD: XXXXXXXX
+      LDAP_BACKUP_CONFIG_CRON_EXP: "0 5 * * *"
+      LDAP_BACKUP_DATA_CRON_EXP: "0 5 * * *"
+
