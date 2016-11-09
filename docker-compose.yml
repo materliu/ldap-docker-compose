@@ -66,6 +66,7 @@ services:
     domainname: ldap.dingfudata.com
     volumes:
       - "./.data/openldap/backup:/data/backup"
+      - "./.data/etc/ldap/slapd.d:/etc/ldap/slapd.d"
     links:
       - db
       - ldap:ldap.dingfudata.com
